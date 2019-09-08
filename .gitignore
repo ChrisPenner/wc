@@ -1,3 +1,5 @@
 .stack-work/
 wc.cabal
 *~
+
+/data
