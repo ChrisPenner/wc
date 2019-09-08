@@ -5,7 +5,7 @@ import Data.Char
 
 data Counts =
     Counts { charCount :: !(Sum Int)
-           , wordCount :: !(Flux Bool)
+           , wordCount :: !Flux
            , lineCount :: !(Sum Int)
            }
     deriving (Show)
@@ -20,34 +20,28 @@ instance Monoid Counts where
 data Pair a = Pair !a !a
     deriving (Show, Eq)
 
-data Flux a = Flux
-  -- We keep track of the last value we saw on the left and right sides of the accumulated
-  -- sequence; `Nothing` is used in the identity case meaning no elements have yet
-  -- been encountered
-  { sides :: !(Maybe (Pair a))
-  -- We have a counter which increments each time we mappend another Flux who's
-  -- left doesn't match our right or vice versa depending on which side it is mappended onto.
-  , getFlux :: !Int
-  } deriving (Show, Eq)
+data CharType = IsSpace | NotSpace
+    deriving Show
+data Flux = Flux !CharType !Int !CharType
+    deriving Show
 
--- | Embed a single value into a Flux;
--- number of changes starts at 0.
-flux :: a -> Flux a
-flux a = Flux (Just (Pair a a)) 0
+instance Semigroup Flux where
+  Flux l n NotSpace <> Flux NotSpace n' r = Flux l (n + n' - 1) r
+  Flux l n _ <> Flux _ n' r = Flux l (n + n') r
 
-instance (Eq a) => Semigroup (Flux a) where
-  Flux Nothing _ <> f = f
-  f <> Flux Nothing _ = f
-  Flux (Just (Pair l r)) n <> Flux (Just (Pair l' r')) n'
-    | r == l' = Flux (Just (Pair l r')) (n + n')
-    | otherwise = Flux (Just (Pair l r')) (n + n' + 1)
+instance Monoid Flux where
+  mempty = Flux IsSpace 0 IsSpace
 
-instance (Eq a) => Monoid (Flux a) where
-  mempty = Flux Nothing 0
+flux :: Char -> Flux
+flux c | isSpace c = mempty
+       | otherwise = Flux NotSpace 1 NotSpace
 
 countChar :: Char -> Counts
 countChar c =
     Counts { charCount = 1
-           , wordCount = flux (isSpace c)
+           , wordCount = flux c
            , lineCount = if (c == '\n') then 1 else 0
            }
+
+getFlux :: Flux -> Int
+getFlux (Flux _ n _) = n
