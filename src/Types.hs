@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module Types where
 
 import Data.Monoid
@@ -22,6 +23,7 @@ data Pair a = Pair !a !a
 
 data CharType = IsSpace | NotSpace
     deriving Show
+
 data Flux = Flux !CharType !Int !CharType
     deriving Show
 
@@ -45,3 +47,6 @@ countChar c =
 
 getFlux :: Flux -> Int
 getFlux (Flux _ n _) = n
+
+toTuple :: Counts -> (Int, Int, Int)
+toTuple Counts{charCount, wordCount, lineCount} = (getSum lineCount, getFlux wordCount, getSum charCount)
