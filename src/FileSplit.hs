@@ -15,22 +15,27 @@ import System.Posix.IO
 import "unix-bytestring" System.Posix.IO.ByteString.Lazy
 import GHC.Conc (numCapabilities)
 import Control.Concurrent.Async
+import Data.Functor
+import Data.Foldable
 
 filesplit :: [FilePath] -> IO [(FilePath, Counts)]
 filesplit paths = for paths $ \fp -> do
     fd <- openFd fp ReadOnly Nothing defaultFileFlags
-    size <- fileSize <$> getFileStatus fp
-    -- putStrLn ("num cores: " <> show numCapabilities)
-    -- print $ (fromIntegral size `div` fromIntegral numCapabilities :: Integer)
-    let half = fromIntegral size `div` 2
-    firstChunkA <- async $ fileSplitCount <$!> fdPread fd half 0
-    secondChunkA <- async $ fileSplitCount <$!> fdPread fd (fromIntegral size - half) (fromIntegral half)
-    (firstCount, secondCount) <- waitBoth firstChunkA secondChunkA
-    closeFd fd
-    return (fp, firstCount <> secondCount)
+    size <- fromIntegral . fileSize <$> getFileStatus fp
+    putStrLn ("Using available cores: " <> show numCapabilities)
+    let chunkSize = size `div` numCapabilities
+    sparks <- for [0..numCapabilities] $ \n -> do
+        -- Adjust for inaccuracies in integer division; don't want to leave any unread bytes
+        let readAmount = fromIntegral $ if n == numCapabilities
+                                            then size - ((n - 1) * chunkSize)
+                                            else chunkSize
+        let offset = fromIntegral (n * chunkSize)
+        async $ countBytes <$!> fdPread fd readAmount offset
+    chunks <- traverse wait sparks
+    closeFd fd $> (fp, fold chunks)
 
-fileSplitCount :: BL.ByteString -> Counts
-fileSplitCount = BL.foldl' (flip (mappend . countByte)) mempty
+countBytes :: BL.ByteString -> Counts
+countBytes = BL.foldl' (flip (mappend . countByte)) mempty
 
 countByte :: Char -> Counts
 countByte c =
