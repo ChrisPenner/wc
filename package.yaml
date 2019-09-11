@@ -21,14 +21,10 @@ description:         Please see the README on GitHub at <https://github.com/Chri
 
 dependencies:
 - base >= 4.7 && < 5
-- pretty-simple
-- hedgehog
-- process
-- lens
-- lens-regex-pcre
-- text
 - mtl
 - bytestring
+- streamly
+- parallel
 
 default-extensions:
 - StrictData
