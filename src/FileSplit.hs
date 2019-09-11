@@ -24,10 +24,10 @@ filesplit paths = for paths $ \fp -> do
     size <- fromIntegral . fileSize <$> getFileStatus fp
     putStrLn ("Using available cores: " <> show numCapabilities)
     let chunkSize = size `div` numCapabilities
-    sparks <- for [0..numCapabilities] $ \n -> do
+    sparks <- for [0..numCapabilities-1] $ \n -> do
         -- Adjust for inaccuracies in integer division; don't want to leave any unread bytes
-        let readAmount = fromIntegral $ if n == numCapabilities
-                                            then size - ((n - 1) * chunkSize)
+        let readAmount = fromIntegral $ if n == (numCapabilities - 1)
+                                            then size - (n * chunkSize)
                                             else chunkSize
         let offset = fromIntegral (n * chunkSize)
         async $ countBytes <$!> fdPread fd readAmount offset
