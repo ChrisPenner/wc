@@ -28,6 +28,7 @@ dependencies:
 - lens-regex-pcre
 - text
 - mtl
+- bytestring
 
 default-extensions:
 - StrictData

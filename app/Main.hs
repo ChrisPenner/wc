@@ -1,11 +1,15 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
+import System.IO
 import System.Environment
+import System.Exit
 import Data.Foldable
 import Data.Monoid
 
 import Simple
+import Lazy
 import Types
 import Text.Printf
 
@@ -13,6 +17,8 @@ printResult (name, Counts{charCount, wordCount, lineCount}) = printf "%s %d %d %
 
 main :: IO ()
 main = do
-    filenames <- getArgs
-    results <- simple filenames
+    results <- getArgs >>= \case
+        ("simple": filenames) -> simple filenames
+        ("lazy": filenames) -> lazyBytestream filenames
+        _ -> hPutStrLn stderr "usage: <simple|lazy> [files...]" >> exitFailure
     traverse_ printResult results

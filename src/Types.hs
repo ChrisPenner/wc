@@ -17,7 +17,6 @@ instance Semigroup Counts where
 instance Monoid Counts where
   mempty = Counts mempty mempty mempty
 
-
 data Pair a = Pair !a !a
     deriving (Show, Eq)
 
