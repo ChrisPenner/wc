@@ -25,6 +25,9 @@ dependencies:
 - bytestring
 - streamly
 - parallel
+- unix
+- unix-bytestring
+- async
 
 default-extensions:
 - StrictData

@@ -8,13 +8,14 @@ import System.Exit
 import Data.Foldable
 import Data.Monoid
 import Text.Printf
+import Types
 
 import Simple
 import Lazy
 import Strict
 import Parallel
 import Streaming
-import Types
+import FileSplit
 
 printResult (name, Counts{charCount, wordCount, lineCount}) = printf "%s %d %d %d\n" name  (getSum lineCount) (getFlux wordCount) (getSum charCount)
 
@@ -26,5 +27,6 @@ main = do
         ("strict": filenames) -> strictBytestream filenames
         ("parallel": filenames) -> parallelBytestream filenames
         ("streaming": filenames) -> streamingBytestream filenames
+        ("split": filenames) -> filesplit filenames
         _ -> hPutStrLn stderr "usage: <simple|lazy> [files...]" >> exitFailure
     traverse_ printResult results

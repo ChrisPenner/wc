@@ -25,9 +25,9 @@ data CharType = IsSpace | NotSpace
     deriving Show
 
 data Flux =
-    Flux {-# UNPACK #-} !CharType
+    Flux !CharType
          {-# UNPACK #-} !Int
-         {-# UNPACK #-} !CharType
+         !CharType
     deriving Show
 
 instance Semigroup Flux where
