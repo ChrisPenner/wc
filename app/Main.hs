@@ -10,6 +10,7 @@ import Data.Monoid
 
 import Simple
 import Lazy
+import Strict
 import Types
 import Text.Printf
 
@@ -20,5 +21,6 @@ main = do
     results <- getArgs >>= \case
         ("simple": filenames) -> simple filenames
         ("lazy": filenames) -> lazyBytestream filenames
+        ("strict": filenames) -> strictBytestream filenames
         _ -> hPutStrLn stderr "usage: <simple|lazy> [files...]" >> exitFailure
     traverse_ printResult results
