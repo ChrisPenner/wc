@@ -5,9 +5,10 @@ import Data.Monoid
 import Data.Char
 
 data Counts =
-    Counts { charCount :: !(Sum Int)
-           , wordCount :: !Flux
-           , lineCount :: !(Sum Int)
+    Counts { charCount :: {-# UNPACK #-} !(Sum Int)
+
+           , wordCount ::  !Flux
+           , lineCount :: {-# UNPACK #-} !(Sum Int)
            }
     deriving (Show)
 
@@ -23,7 +24,10 @@ data Pair a = Pair !a !a
 data CharType = IsSpace | NotSpace
     deriving Show
 
-data Flux = Flux !CharType !Int !CharType
+data Flux =
+    Flux {-# UNPACK #-} !CharType
+         {-# UNPACK #-} !Int
+         {-# UNPACK #-} !CharType
     deriving Show
 
 instance Semigroup Flux where
