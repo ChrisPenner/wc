@@ -7,17 +7,16 @@
 
 module FileSplit where
 
-import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.ByteString.Char8 as BS
 import Data.ByteString.Internal (c2w)
 
 import Types
 import Control.Monad
 import Control.Arrow
 import Data.Traversable
-import Data.Bits
 import System.Posix.Files
 import System.Posix.IO
-import "unix-bytestring" System.Posix.IO.ByteString.Lazy
+import "unix-bytestring" System.Posix.IO.ByteString
 import GHC.Conc (numCapabilities)
 import GHC.Exts
 import Control.Concurrent.Async
@@ -39,17 +38,5 @@ filesplit paths = for paths $ \fp -> do
         countBytes <$!> fdPread fd readAmount offset)
     closeFd fd $> (fp, result)
 
-countBytes :: BL.ByteString -> Counts
-countBytes = BL.foldl' (\acc next -> acc <> countByte next) mempty
-
-countByte :: Char -> Counts
-countByte c =
-     Counts {
-                -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
-                -- charCount = 1
-               , wordCount = flux c
-               , lineCount = if (c == '\n') then 1 else 0
-               }
-    where
-      bitAt = testBit (c2w c)
+countBytes :: BS.ByteString -> Counts
+countBytes = BS.foldl' (\acc next -> acc <> countChar next) mempty
