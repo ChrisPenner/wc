@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module FileSplit where
 
@@ -39,17 +40,12 @@ filesplit paths = for paths $ \fp -> do
     closeFd fd $> (fp, result)
 
 countBytes :: BL.ByteString -> Counts
-countBytes = BL.foldl' (flip ((<>) . countByte)) mempty
+countBytes = BL.foldl' (\acc next -> acc <> countByte next) mempty
 
 countByte :: Char -> Counts
 countByte c =
      Counts {
                 -- Only count bytes at the START of a codepoint, not continuations
-                -- charCount =
-                --     case unsafeCoerce# c of
-                --         W# w -> case w `and#` 0b11000000## of
-                --                 0b10000000## -> 0
-                --                 _            -> 1
                 charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
                 -- charCount = 1
                , wordCount = flux c

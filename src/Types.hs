@@ -28,17 +28,20 @@ data Flux =
     Flux !CharType
          {-# UNPACK #-} !Int
          !CharType
+    | Unknown
     deriving Show
 
 instance Semigroup Flux where
+  Unknown <> x = x
+  x <> Unknown = x
   Flux l n NotSpace <> Flux NotSpace n' r = Flux l (n + n' - 1) r
   Flux l n _ <> Flux _ n' r = Flux l (n + n') r
 
 instance Monoid Flux where
-  mempty = Flux IsSpace 0 IsSpace
+  mempty = Unknown
 
 flux :: Char -> Flux
-flux c | isSpace c = mempty
+flux c | isSpace c = Flux IsSpace 0 IsSpace
        | otherwise = Flux NotSpace 1 NotSpace
 
 countChar :: Char -> Counts

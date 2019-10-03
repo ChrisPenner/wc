@@ -39,3 +39,5 @@ wc s = do
     output <- readProcess "wc" [] s
     let [chars, words, lines] = T.pack output ^.. regex [rx|\d+|] . match . unpacked . _Show
     return (chars, words, lines)
+
+
