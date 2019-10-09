@@ -17,8 +17,9 @@ import Parallel
 import Streaming
 import FileSplit
 import FileSplitUTF
+import HandleSplitUTF
 
-printResult (name, Counts{charCount, wordCount, lineCount}) = printf "%s %d %d %d\n" name  (getSum lineCount) (getFlux wordCount) (getSum charCount)
+printResult (name, Counts{charCount, wordCount, lineCount}) = printf "%d %d %d %s\n" (getSum lineCount) (getFlux wordCount) (getSum charCount) name  
 
 main :: IO ()
 main = do
@@ -30,5 +31,6 @@ main = do
         ("streaming": filenames) -> streamingBytestream filenames
         ("split": filenames) -> filesplit filenames
         ("split-utf": filenames) -> filesplitUTF filenames
+        ("handle-utf": filenames) -> handleSplitUTF filenames
         _ -> hPutStrLn stderr "usage: <simple|lazy> [files...]" >> exitFailure
     traverse_ printResult results

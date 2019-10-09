@@ -4,7 +4,6 @@
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE BangPatterns #-}
 
 module FileSplitUTF where
 
@@ -27,16 +26,16 @@ import Data.Foldable
 
 filesplitUTF :: [FilePath] -> IO [(FilePath, Counts)]
 filesplitUTF paths = for paths $ \fp -> do
-    !fd <- openFd fp ReadOnly Nothing defaultFileFlags
-    !size <- fromIntegral . fileSize <$> getFileStatus fp
+    fd <- openFd fp ReadOnly Nothing defaultFileFlags
+    size <- fromIntegral . fileSize <$> getFileStatus fp
     putStrLn ("Using available cores: " <> show numCapabilities)
-    let !chunkSize = size `div` numCapabilities
-    !result <- fold <$!> (forConcurrently [0..numCapabilities-1] $ \(!n) -> do
+    let chunkSize = size `div` numCapabilities
+    result <- fold <$!> (forConcurrently [0..numCapabilities-1] $ \(n) -> do
         -- Adjust for inaccuracies in integer division; don't want to leave any unread bytes
-        let !readAmount = fromIntegral $ if n == (numCapabilities - 1)
+        let readAmount = fromIntegral $ if n == (numCapabilities - 1)
                                             then size - (n * chunkSize)
                                             else chunkSize
-        let !offset = fromIntegral (n * chunkSize)
+        let offset = fromIntegral (n * chunkSize)
         countBytes <$!> fdPread fd readAmount offset)
     closeFd fd $> (fp, result)
 
