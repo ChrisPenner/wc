@@ -1,30 +1,18 @@
-{-# LANGUAGE BinaryLiterals #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE PackageImports #-}
-{-# LANGUAGE ViewPatterns #-}
-{-# LANGUAGE OverloadedStrings #-}
-
 module HandleSplitUTF where
-
-import qualified Data.ByteString.Lazy.Char8 as BLC
-import qualified Data.ByteString.Lazy as BL
-import Data.ByteString.Internal (c2w)
-import GHC.IO.Handle
 
 import Types
 import Control.Monad
-import Control.Arrow
 import Data.Traversable
 import Data.Bits
 import GHC.Conc (numCapabilities)
-import GHC.Exts
 import Control.Concurrent.Async
-import Data.Functor
 import Data.Foldable
 import System.IO
 import System.Posix.Files
-import System.Posix.IO
+import qualified Data.ByteString.Lazy.Char8 as BL
+import Data.ByteString.Internal (c2w)
+import GHC.IO.Handle
+
 
 handleSplitUTF :: [FilePath] -> IO [(FilePath, Counts)]
 handleSplitUTF paths = for paths $ \fp -> do
@@ -41,9 +29,11 @@ handleSplitUTF paths = for paths $ \fp -> do
         hSeek fileHandle AbsoluteSeek offset
         countBytes . limiter <$!> BL.hGetContents fileHandle)
     return (fp, result)
+{-# INLINE handleSplitUTF #-}
 
 countBytes :: BL.ByteString -> Counts
-countBytes = BLC.foldl' (\acc next -> acc <> countByte next) mempty
+countBytes = BL.foldl' (\acc next -> acc <> countByte next) mempty
+{-# INLINE countBytes #-}
 
 countByte :: Char -> Counts
 countByte c =
@@ -56,3 +46,4 @@ countByte c =
                }
     where
       bitAt = testBit (c2w c)
+{-# INLINE countByte #-}
