@@ -414,7 +414,7 @@ countByte c =
 
 And that's it! Now we can handle UTF-8 or ASCII; we don't even need to know which encoding we're handling, we'll always give the right answer.
 
-`wc`, at least the version on my Macbook, has a `-m` flag for handling multi-byte characters when counting. A few quick experiments shows that it slows down the process pretty significantly (it now has to decode every byte); let's see how our version does in comparison.
+`wc`, at least the version on my Macbook, has a `-m` flag for handling multi-byte characters when counting. A few quick experiments shows that it slows down the process pretty significantly (it now has to decode every byte); let's see how our version does in comparison. (I've confirmed they get the same results when running on a large UTF-8 encoded document with many non-ASCII characters)
 
 |          | wc -mwl   | multicore-utf8         |
 | -------- | --------- | ---------------------- |
