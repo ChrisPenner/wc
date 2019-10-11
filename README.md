@@ -53,7 +53,7 @@ simpleFoldCountFile s =
      in (cs, ws, ls)
   where
     go :: (Int, Int, Int, Bool) -> Char -> (Int, Int, Int, Bool)
-    go (!cs, !ws, !ls, !wasSpace) c =
+    go (cs, ws, ls, wasSpace) c =
         let addLine | c == '\n' = 1
                     | otherwise = 0
             addWord | wasSpace = 0
