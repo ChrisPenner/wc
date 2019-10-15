@@ -12,6 +12,7 @@ extra-source-files:
 
 ghc-options:
 - -fstatic-argument-transformation
+- -fspec-constr-recursive=10
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -60,4 +61,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - wc
+    - hedgehog-classes
+    - hedgehog
+    - process
 

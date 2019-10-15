@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiWayIf #-}
 module Streaming where
 
 import Types
@@ -15,14 +14,14 @@ streamingBytestream paths = for paths $ \fp -> do
     src <- openFile fp ReadMode
     count <-
           S.foldl' mappend mempty
-        $ S.asyncly
+        $ S.aheadly
         $ S.maxThreads 8
         $ S.mapM countBytes
         $ FH.toStreamArraysOf 1024000 src
     return (fp, count)
     where
     countBytes =
-          S.foldl' (\acc c -> acc <> countByte c) mempty
+          S.foldl' (\acc c -> acc <> countByteUTF8 c) mempty
         . S.decodeChar8
         . A.toStream
 

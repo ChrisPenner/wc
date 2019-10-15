@@ -30,5 +30,5 @@ handleSplitUTF paths = for paths $ \fp -> do
 {-# INLINE handleSplitUTF #-}
 
 countBytes :: BL.ByteString -> Counts
-countBytes = BL.foldl' (\acc next -> acc <> countByte next) mempty
+countBytes = BL.foldl' (\acc next -> acc <> countByteUTF8 next) mempty
 {-# INLINE countBytes #-}
