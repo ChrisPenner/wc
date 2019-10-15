@@ -2,18 +2,19 @@
 
 Okay! So the challenge is to build a clone of the unix `wc` utility in Haskell and see how close we can get our performance and memory characteristics! Sounds simple enough!
 
-The criteria we'll consider includes:
+Here's the criteria:
 
 * Correctness: Should return identical character, word, and line counts as `wc` on the test files.
 * Speed (wall-clock-time): How do we compare to the execution time of `wc`?
 * Max Resident Memory: What's the peak of our memory usage? Is our memory usage constant, linear, or otherwise?
 
-Those are the main things we need to worry about!
+Those are the main things we need to worry about.
 
+Let's dive in.
 
 ## The dumbest thing that could possibly work
 
-As always we should start by just trying the dumbest possible thing and see how it goes. We can build up from there. What's the dumbest way to count characters, lines, and words in Haskell? Well, we could read the file, then run the functions `length`,`length . words`, and `length . lines` to get our counts!
+As always, we should start by just trying the dumbest possible thing and see how it goes. We can build up from there. What's the dumbest way to count characters, lines, and words in Haskell? Well, we could read the file, then run the functions `length`,`length . words`, and `length . lines` to get our counts!
 
 ```haskell
 stupid :: FilePath -> IO (Int, Int, Int)
@@ -22,7 +23,7 @@ stupid fp = do
     return (length s, length (words s), length (lines s))
 ```
 
-Amazingly enough, this actually DOES work, and gets us the same answers as `wc`, IF you're willing to wait for it... I got sick of waiting for it to finish on my large test file (it was taking more than a few minutes), but on a smaller test file we got the following results:
+Amazingly enough, this actually DOES work, and gets us the same answers as `wc`, IF you're willing to wait for it... I got sick of waiting for it to finish on my large test file (it was taking more than a few minutes), but on a smaller test file (90 MB) got the following results:
 
 |          | wc        | stupid-wc |
 | -------- | --------- |---------- |
@@ -31,13 +32,13 @@ Amazingly enough, this actually DOES work, and gets us the same answers as `wc`,
 
 Yikes... Needless to say there's some room for improvement...
 
-## A single pass
+## Being slightly less dumb
 
-Let's think about why this is doing so poorly; the first thing that comes to mind is that we're iterating through the contents of the file 3 separate times! This also means GHC can't garbage collect our list as we iterate through it since we're still using it in other places. This helps explain the 2.4 GBs of memory on a file that's only 90 MB! Ouch!
+Let's think about why this is doing so poorly; the first thing that comes to mind is that we're iterating through the contents of the file 3 separate times! This also means GHC can't garbage collect our list as we iterate through it since we're still using it in other places. The fact that we're keeping every character of the file in a linked list helps explain the 2.4 GB of memory on a file that's only 90 MB! Ouch!
 
-Okay, so that's REALLY not great. Let's see if we can get this down to a SINGLE pass over the structure. We're accumulating 3 simple things, so maybe we can process all three parts at once?
+Okay, so that's REALLY not great. Let's see if we can get this down to a SINGLE pass over the structure. We're accumulating 3 simple things, so maybe we can process all three parts at once? When iterating through a structure to get one final result I reach for folds!
 
-It's pretty easy to use a fold when adding character an line counts; the character count ALWAYS adds one to the total, the line count adds one when the current character is a newline; but what about the word count? We can't add one on every space character because consecutive spaces doesn't count as a new word! We'll need to keep track of whether the previous character was a space, and only add one to the counter if we weren't already inside a block of spaces. It's still not so tough; we'll just use `foldl'` from `Data.List`.
+It's pretty easy to use a fold to count characters or lines; the character count always adds one to the total, the line count adds one when the current character is a newline; but what about the word count? We can't add one on every space character because consecutive spaces doesn't count as a new word! We'll need to keep track of whether the previous character was a space, and only add one to the counter whenever we start a completely **new** word. That's not too tough to do; we'll use `foldl'` from `Data.List` for our implementation.
 
 ```haskell
 import Data.List
@@ -45,10 +46,10 @@ import Data.Char
 
 simpleFold :: FilePath -> IO (Int, Int, Int)
 simpleFold fp = do
-    simpleFoldCountFile <$> readFile fp
+    countFile <$> readFile fp
 
-simpleFoldCountFile :: String -> (Int, Int, Int)
-simpleFoldCountFile s =
+countFile :: String -> (Int, Int, Int)
+countFile s =
     let (cs, ws, ls, _) = foldl' go (0, 0, 0, False) s
      in (cs, ws, ls)
   where
