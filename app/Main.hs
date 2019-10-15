@@ -13,7 +13,9 @@ import Stupid
 import Simple
 import SimpleFold
 import SimpleBSFold
+import InlinedBSFold
 import MonoidBSFold
+import InlinedMonoidBSFold
 import Lazy
 import Strict
 import Parallel
@@ -31,6 +33,8 @@ main = do
         ("lazy": filenames) -> lazyBytestream filenames
         ("simple-bs-fold": filenames) -> simpleBSFold filenames
         ("monoid-bs-fold": filenames) -> monoidBSFold filenames
+        ("inlined-monoid-bs-fold": filenames) -> inlinedMonoidBSFold filenames
+        ("inlined-bs-fold": filenames) -> inlinedBSFold filenames
         ("stupid": filenames) -> stupid filenames
         ("simple": filenames) -> simple filenames
         ("simple-fold": filenames) -> simpleFold filenames

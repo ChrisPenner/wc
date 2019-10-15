@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module MonoidBSFold where
 
 import Types
@@ -11,8 +10,6 @@ monoidBSFold :: [FilePath] -> IO [(FilePath, Counts)]
 monoidBSFold paths = for paths $ \fp -> do
     count <- monoidFoldFile <$> BS.readFile fp
     return (fp, count)
-{-# INLINE monoidBSFold #-}
 
 monoidFoldFile :: BS.ByteString -> Counts
 monoidFoldFile = BS.foldl' (\a b -> a <> countChar b) mempty
-{-# INLINE monoidFoldFile #-}
