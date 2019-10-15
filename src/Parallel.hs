@@ -32,14 +32,3 @@ parallelCountFile bl = F.foldl' (<>) mempty . withStrategy (evalBuffer 100 rseq)
 
 countBytes :: BS.ByteString -> Counts
 countBytes = BS.foldl' (flip (mappend . countByte)) mempty
-
-countByte :: Char -> Counts
-countByte c =
-    let bitAt = testBit (c2w c)
-     in Counts {
-                -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
-               , wordCount = flux c
-               , lineCount = if (c == '\n') then 1 else 0
-               }
-

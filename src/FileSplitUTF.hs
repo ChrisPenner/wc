@@ -40,16 +40,4 @@ filesplitUTF paths = for paths $ \fp -> do
     closeFd fd $> (fp, result)
 
 countBytes :: BS.ByteString -> Counts
-countBytes = BS.foldl' (\acc next -> acc <> countByte next) mempty
-
-countByte :: Char -> Counts
-countByte c =
-     Counts {
-                -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
-                -- charCount = 1
-               , wordCount = flux c
-               , lineCount = if (c == '\n') then 1 else 0
-               }
-    where
-      bitAt = testBit (c2w c)
+countBytes = BS.foldl' (\acc next -> acc <> countByteUTF8 next) mempty

@@ -3,6 +3,8 @@ module Types where
 
 import Data.Monoid
 import Data.Char
+import Data.Bits
+import Data.ByteString.Internal (c2w)
 
 data Counts =
     Counts { charCount :: {-# UNPACK #-} !Int
@@ -65,3 +67,27 @@ fromTuple (cs, ws, ls) =
 
 toTuple :: Counts -> (Int, Int, Int)
 toTuple Counts{charCount, wordCount, lineCount} = (lineCount, getFlux wordCount, charCount)
+
+
+
+countByteUTF8 :: Char -> Counts
+countByteUTF8 c =
+     Counts {
+                -- Only count bytes at the START of a codepoint, not continuations
+                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
+                -- charCount = 1
+               , wordCount = flux c
+               , lineCount = if (c == '\n') then 1 else 0
+               }
+    where
+      bitAt = testBit (c2w c)
+{-# INLINE countByteUTF8 #-}
+
+countByte :: Char -> Counts
+countByte c =
+     Counts {
+                charCount = 1
+               , wordCount = flux c
+               , lineCount = if (c == '\n') then 1 else 0
+               }
+{-# INLINE countByte #-}

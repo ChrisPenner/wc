@@ -11,6 +11,20 @@ packages:
       sha256: ead2cd1cceaa16f15a7f6babae14befa97c8e8b513817f16282322258771a607
   original:
     hackage: flux-monoid-0.1.0.0@sha256:c428dc47c6fcc52a3e5ce30ef4c97a2afccb3d2a0663bc4bd525f470ba6deb24,683
+- completed:
+    cabal-file:
+      size: 30131
+      sha256: 650bc2a3ea114d32b4cbe321d002d89de08d508692cf36092386953790e27ecc
+    name: streamly
+    version: 0.6.1
+    git: https://github.com/composewell/streamly
+    pantry-tree:
+      size: 9380
+      sha256: 7df3a3202b7f3878f853210dd363ca065456298bb74acd729ec0fa11b5eee3b4
+    commit: 0e98baf0132ca19d783e6a65b24d4e866b6d587a
+  original:
+    git: https://github.com/composewell/streamly
+    commit: 0e98baf0132ca19d783e6a65b24d4e866b6d587a
 snapshots:
 - completed:
     size: 523448

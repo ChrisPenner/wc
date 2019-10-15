@@ -1,37 +1,29 @@
 {-# LANGUAGE MultiWayIf #-}
 module Streaming where
 
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Char8 as BS
-import Data.ByteString.Internal (c2w)
-
 import Types
-import Control.Monad
-import Control.Arrow
 import Data.Traversable
-import Data.Bits
-import Data.Functor.Identity
+import System.IO (openFile, IOMode(..))
 import qualified Streamly as S
+import qualified Streamly.Data.String as S
 import qualified Streamly.Prelude as S
+import qualified Streamly.Internal.Memory.Array as A
+import qualified Streamly.Internal.FileSystem.Handle as FH
 
 streamingBytestream :: [FilePath] -> IO [(FilePath, Counts)]
 streamingBytestream paths = for paths $ \fp -> do
-    count <- BL.readFile fp >>= streamingCountFile
+    src <- openFile fp ReadMode
+    count <-
+          S.foldl' mappend mempty
+        $ S.asyncly
+        $ S.maxThreads 8
+        $ S.mapM countBytes
+        $ FH.toStreamArraysOf 1024000 src
     return (fp, count)
+    where
+    countBytes =
+          S.foldl' (\acc c -> acc <> countByte c) mempty
+        . S.decodeChar8
+        . A.toStream
 
-streamingCountFile :: BL.ByteString -> IO Counts
-streamingCountFile bl = S.foldl' (flip (mappend . countBytes)) mempty S.|$. S.maxThreads 4 (S.foldMapWith S.parallel return (BL.toChunks bl))
-
-countBytes :: BS.ByteString -> Counts
-countBytes = BS.foldl' (flip (mappend . countByte)) mempty
-
-countByte :: Char -> Counts
-countByte c =
-    let bitAt = testBit (c2w c)
-     in Counts {
-                -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
-               , wordCount = flux c
-               , lineCount = if (c == '\n') then 1 else 0
-               }
-
+{-# INLINE streamingBytestream #-}
