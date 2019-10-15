@@ -1,8 +1,8 @@
 # Rebuilding wc
 
-Okay! So the challenge is to build a clone of the unix `wc` utility in Haskell and see how close we can get our performance and memory characteristics! Sounds simple enough!
+The challenge is to build a *faster* clone of the hand-optimized C implementation of the `wc` utility in our favourite high-level garbage-collected runtime-based language: Haskell! Sounds simple enough right?
 
-Here's the criteria:
+Here's the criteria we'll be considering as we go along:
 
 * Correctness: Should return identical character, word, and line counts as `wc` on the test files.
 * Speed (wall-clock-time): How do we compare to the execution time of `wc`?
@@ -452,4 +452,8 @@ And that's it! Now we can handle UTF-8 or ASCII; we don't even need to know whic
 
 Just as we suspect, we come out pretty far ahead! Our new version is a bit slower than when we just counted every byte (we're now doing a few extra bit-checks), so it's probably a good idea to add a `utf` flag to our program so we can always run as fast as possible for a given input.
 
-At any rate, it's a pretty interesting result!
+## Conclusions
+
+So; how does our high-level garbage-collected runtime-based language Haskell stack up? Pretty dang well I'd say! We ended up really quite close with our single-core lazy-bytestring `wc`. Switching to a multi-core approach ultimately allowed us to pull ahead! Whether our `wc` clone is faster in practice without a warmed up disk-cache is something that should be considered, but in terms of raw performance we're still winning this one. 
+
+Haskell as a language isn't perfect, but if I can get ball-park comparable performance to a C program while writing much higher-level fully type-checked code then I'll call that a win any day.
