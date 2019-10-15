@@ -4,6 +4,8 @@ You can find the blog version of this article [here](https://chrispenner.ca/post
 
 And if you're at all interested in the book I'm writing on lenses and optics, you can find that [here](https://www.patreon.com/ChrisPenner). Cheers!
 
+For reference, I'm using the Mac's version of `wc`; you can find [reference source code here](https://opensource.apple.com/source/text_cmds/text_cmds-68/wc/wc.c.auto.html).
+
 * * *
 
 The challenge is to build a *faster* clone of the hand-optimized C implementation of the `wc` utility in our favourite high-level garbage-collected runtime-based language: Haskell! Sounds simple enough right?
