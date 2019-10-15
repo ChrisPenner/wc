@@ -10,6 +10,10 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 
+ghc-options:
+- -funbox-strict-fields
+- -fstatic-argument-transformation
+
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
 # category:            Other
