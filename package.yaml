@@ -44,6 +44,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -O2
+    - -fspec-constr-recursive=10
+
     dependencies:
     - wc
 

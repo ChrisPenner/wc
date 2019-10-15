@@ -1,37 +1,61 @@
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE CPP #-}
+
 module Streaming where
 
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.Char8 as BS
-import Data.ByteString.Internal (c2w)
-
-import Types
-import Control.Monad
 import Control.Arrow
-import Data.Traversable
+import Control.Monad
 import Data.Bits
+import Data.Char
 import Data.Functor.Identity
+import Data.Traversable
+import Data.Word
+import System.IO
+import Types
 import qualified Streamly as S
+import qualified Streamly.Data.String as S
+import qualified Streamly.Internal.FileSystem.Handle as FH
+import qualified Streamly.Internal.Memory.Array as A
 import qualified Streamly.Prelude as S
 
+
+-- #define UTF8
+#define PARALLEL
+
+{-# INLINE streamingBytestream #-}
 streamingBytestream :: [FilePath] -> IO [(FilePath, Counts)]
 streamingBytestream paths = for paths $ \fp -> do
-    count <- BL.readFile fp >>= streamingCountFile
+    src <- openFile fp ReadMode
+    count <-
+          S.foldl' (flip mappend) mempty
+#ifdef PARALLEL
+        $ S.asyncly
+        $ S.maxThreads 8
+#endif
+        $ S.mapM countBytes
+        $ FH.toStreamArraysOf 1024000 src
     return (fp, count)
+    where
+    countBytes =
+          S.foldl' (flip (mappend . countByte)) mempty
+#if !defined(UTF8) || defined(PARALLEL)
+        . S.decodeChar8
+#else
+        . S.decodeUtf8Lenient
+#endif
+        . A.toStream
 
-streamingCountFile :: BL.ByteString -> IO Counts
-streamingCountFile bl = S.foldl' (flip (mappend . countBytes)) mempty S.|$. S.maxThreads 4 (S.foldMapWith S.parallel return (BL.toChunks bl))
-
-countBytes :: BS.ByteString -> Counts
-countBytes = BS.foldl' (flip (mappend . countByte)) mempty
-
+{-# INLINE countByte #-}
 countByte :: Char -> Counts
+#if defined(UTF8) && defined(PARALLEL)
 countByte c =
-    let bitAt = testBit (c2w c)
-     in Counts {
-                -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
-               , wordCount = flux c
-               , lineCount = if (c == '\n') then 1 else 0
-               }
-
+    let bitAt = testBit (ord c)
+    in Counts
+        {
+          -- Only count bytes at the START of a codepoint, not continuations
+          charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
+        , wordCount = flux c
+        , lineCount = if (c == '\n') then 1 else 0
+        }
+#else
+countByte = countChar
+#endif
