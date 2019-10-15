@@ -5,13 +5,6 @@
 
 packages:
 - completed:
-    hackage: flux-monoid-0.1.0.0@sha256:c428dc47c6fcc52a3e5ce30ef4c97a2afccb3d2a0663bc4bd525f470ba6deb24,683
-    pantry-tree:
-      size: 266
-      sha256: ead2cd1cceaa16f15a7f6babae14befa97c8e8b513817f16282322258771a607
-  original:
-    hackage: flux-monoid-0.1.0.0@sha256:c428dc47c6fcc52a3e5ce30ef4c97a2afccb3d2a0663bc4bd525f470ba6deb24,683
-- completed:
     cabal-file:
       size: 30131
       sha256: 650bc2a3ea114d32b4cbe321d002d89de08d508692cf36092386953790e27ecc
@@ -25,6 +18,13 @@ packages:
   original:
     git: https://github.com/composewell/streamly
     commit: 0e98baf0132ca19d783e6a65b24d4e866b6d587a
+- completed:
+    hackage: hedgehog-classes-0.2.4@sha256:f38ce9900e03e45108cb0f27860b8bf3671e0261d5e2197b4fa1bc27acb77df7,5355
+    pantry-tree:
+      size: 5059
+      sha256: a294760bf52590c0998b139993d53169aa4a6f031f8d2e130c6d1742e82e0c71
+  original:
+    hackage: hedgehog-classes-0.2.4@sha256:f38ce9900e03e45108cb0f27860b8bf3671e0261d5e2197b4fa1bc27acb77df7,5355
 snapshots:
 - completed:
     size: 523448

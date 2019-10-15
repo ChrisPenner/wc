@@ -8,12 +8,9 @@ import qualified Hedgehog.Gen           as Gen
 import qualified Hedgehog.Range         as Range
 import           Control.Monad
 import           System.Process
-import           Control.Lens
-import           Control.Lens.Regex
-import qualified Data.Text              as T
-import           Data.Text.Lens
 import           Control.Monad.IO.Class
 import           Types
+import Streaming
 
 import Simple
 
@@ -39,5 +36,6 @@ wc s = do
     output <- readProcess "wc" [] s
     let [chars, words, lines] = T.pack output ^.. regex [rx|\d+|] . match . unpacked . _Show
     return (chars, words, lines)
+
 
 

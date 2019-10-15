@@ -41,9 +41,9 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 
 extra-deps:
-- flux-monoid-0.1.0.0@sha256:c428dc47c6fcc52a3e5ce30ef4c97a2afccb3d2a0663bc4bd525f470ba6deb24,683
 - git: https://github.com/composewell/streamly
   commit: 0e98baf0132ca19d783e6a65b24d4e866b6d587a
+- hedgehog-classes-0.2.4@sha256:f38ce9900e03e45108cb0f27860b8bf3671e0261d5e2197b4fa1bc27acb77df7,5355
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
