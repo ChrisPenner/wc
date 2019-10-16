@@ -4,12 +4,9 @@ You can find the blog version of this article [here](https://chrispenner.ca/post
 
 And if you're at all interested in the book I'm writing on lenses and optics, you can find that [here](https://www.patreon.com/ChrisPenner). Cheers!
 
-
 * * *
 
 The challenge is to build a *faster* clone of the hand-optimized C implementation of the `wc` utility in our favourite high-level garbage-collected runtime-based language: Haskell! Sounds simple enough right?
-
-For reference, I'm using the Mac's version of `wc`; you can find [reference source code here](https://opensource.apple.com/source/text_cmds/text_cmds-68/wc/wc.c.auto.html).
 
 Here's the criteria we'll be considering as we go along:
 
@@ -28,7 +25,7 @@ As always, we should start by just trying the dumbest possible thing and see how
 ```haskell
 stupid :: FilePath -> IO (Int, Int, Int)
 stupid fp = do
-    contents <- readFile fp
+    s <- readFile fp
     return (length s, length (words s), length (lines s))
 ```
 
@@ -370,7 +367,7 @@ multiCoreCount fp = do
     size <- fromIntegral . fileSize <$> getFileStatus fp
     let chunkSize = fromIntegral (size `div` numCapabilities)
     fold <$!> (forConcurrently [0..numCapabilities-1] $ \n -> do
-        -- Take all remaining bytes on the last capability due to integer division anomolies
+        -- Take all remaining bytes on the last capability due to integer division anomalies
         let limiter = if n == numCapabilities - 1
                          then id
                          else BL.take (fromIntegral chunkSize)
@@ -389,7 +386,7 @@ There's a lot going on here, so I'll break it down as best I can.
 
 We can import the number of "capabilities" available to our program (i.e. the number of cores we have access to) from `GHC.Conc`. From there, we run a fileStat on the file we want to count to get the number of bytes in the file. From there, we use integer division to determine how many bytes should be handled by each individual core. The integer division rounds the result down, so we'll have to be careful to pick up the bytes that were possibly left out later on. We then use `forConcurrently` from `Control.Concurrent.Async` to run a separate thread for each of our capabilities.
 
-Inside each thread we check whether we're inside the thread which handls the LAST chunk of the file, if we are we should read until the EOF to pick up the leftover bytes from the earlier rounding error, otherwise we want to limit ourselves to processing only `chunkSize` bytes. Then we can calculate our offset into the file by multiplying the chunk size by our thread number. We open a binary file handle and use `hSeek` to move our handle to the starting offset for our thread. From this point we can simply read our allocated number of bytes and fold them down using the same logic as before. After we've handled each of the threads, we'll use a simple `fold` to combine the counts of each chunk into a total count.
+Inside each thread we check whether we're inside the thread which handles the LAST chunk of the file, if we are we should read until the EOF to pick up the leftover bytes from the earlier rounding error, otherwise we want to limit ourselves to processing only `chunkSize` bytes. Then we can calculate our offset into the file by multiplying the chunk size by our thread number. We open a binary file handle and use `hSeek` to move our handle to the starting offset for our thread. From this point we can simply read our allocated number of bytes and fold them down using the same logic as before. After we've handled each of the threads, we'll use a simple `fold` to combine the counts of each chunk into a total count.
 
 We use `<$!>` in a few spots to add additional strictness since we want to ensure that the folding operations happen within each thread, instead of after the threads have been joined. I might go a little overboard on strictness annotations, but it's easier to add too many than it is to track down the places we've accidentally missed them.
 
