@@ -2,6 +2,7 @@ module Streaming where
 
 import Types
 import Data.Traversable
+import GHC.Conc (numCapabilities)
 import System.IO (openFile, IOMode(..))
 import qualified Streamly as S
 import qualified Streamly.Data.String as S
@@ -15,7 +16,7 @@ streamingBytestream paths = for paths $ \fp -> do
     count <-
           S.foldl' mappend mempty
         $ S.aheadly
-        $ S.maxThreads 8
+        $ S.maxThreads numCapabilities
         $ S.mapM countBytes
         $ FH.toStreamArraysOf 1024000 src
     return (fp, count)

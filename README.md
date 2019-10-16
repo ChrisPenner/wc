@@ -472,7 +472,7 @@ Just as we suspect, we come out pretty far ahead! Our new version is a bit slowe
 
 # Interjection!
 
-Since posting the article, the wonderful [Harendra Kumar](https://github.com/harendra-kumar) has provided me with a new performance tweak to try, which (spoiler alert) gives us better memory and performance while also allowing us to STREAM input from stdin! Wow! The code is pretty too!
+Since posting the article, the wonderful [Harendra Kumar](https://github.com/harendra-kumar) has provided me with a new performance tweak to try, which (spoiler alert) gives us even better performance while also allowing us to STREAM input from stdin! Wow! The code is pretty too!
 
 The secret lies in the [`streamly` library](https://github.com/composewell/streamly), a wonderful high-level high-performance streaming library. I'd seen it in passing, but these result will definitely have me reaching for it in the future! Enough talk, let's see some code! Thanks again to Harendra Kumar for this implementation:
 

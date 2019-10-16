@@ -11,7 +11,7 @@ import Data.ByteString.Internal (c2w)
 data Counts =
     Counts { charCount :: {-# UNPACK #-} !Int
 
-           , wordCount :: {-# UNPACK #-} !Flux
+           , wordCount :: !Flux
            , lineCount :: {-# UNPACK #-} !Int
            }
     deriving (Show)
@@ -29,9 +29,9 @@ data CharType = IsSpace  | NotSpace
     deriving Show
 
 data Flux =
-    Flux {-# UNPACK #-} !CharType
+    Flux !CharType
          {-# UNPACK #-} !Int
-         {-# UNPACK #-} !CharType
+         !CharType
     |  Unknown
     deriving Show
 
@@ -69,8 +69,6 @@ fromTuple (cs, ws, ls) =
 
 toTuple :: Counts -> (Int, Int, Int)
 toTuple Counts{charCount, wordCount, lineCount} = (lineCount, getFlux wordCount, charCount)
-
-
 
 countByteUTF8 :: Char -> Counts
 countByteUTF8 c =
