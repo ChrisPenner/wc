@@ -297,6 +297,8 @@ We're in the ballpark now!
 
 We've knocked off a good chunk of time AND memory with this change... I'll admit I have no idea WHY, but I won't look a gift-horse in the mouth. It's possible that by using a fully strict data structure we've strictified some laziness that snuck in somewhere; but I'm really not sure. If you can see what happened please let me know!
 
+**UPDATE**: **guibou** pointed out to me that our `Flux` and `Counts` type use `UNPACK` pragmas, whereas beforehand we used a regular ol' tuple. Apparently GHC is sometimes smart enough to UNPACK tuples, but it's likely that wasn't happening in this case. By `UNPACK`ing we can save a few pointer indirections and use less memory!
+
 ## Inlining away!
 
 Next in our quest, I think I'll inline some definitions! Why? Because that's just what you do when you want performance! We can use the `INLINE` pragma to tell GHC that our function is performance critical and it'll inline it for us; possibly triggering further optimizations down the line.
@@ -411,6 +413,8 @@ It seems to make a pretty big difference! We're actually going FASTER than some 
 
 I did a bit of skimming and it seems that SOME storage devices might experience a speed-up from doing file reads in parallel, some may actually slow down. Your mileage may vary. If anyone's an expert on SSDs I'd love to hear from you on this one. Regardless I'm still pretty happy with the results.
 
+**UPDATE**: Turns out some folks out there ARE experts on SSDs! Paul Tanner wrote me an email explaining that modern NVME drives can typically benefit from this sort of parallelism, so long as we're not accessing the same block (and here we're not). Unfortunately, my ancient macbook doesn't have one, but on the plus side that means this code might actually run even FASTER on a modern drive. Thanks Paul!
+
 In case you're wondering, the actual `User` time for our program comes in at `4.22s` (which is split across the 4 cores), meaning our parallel program is less efficient than the simple version in terms of actual processor cycles, but the ability to use multiple cores gets the "real" wall-clock time down.
 
 ## Handling Unicode
@@ -466,8 +470,117 @@ And that's it! Now we can handle UTF-8 or ASCII; we don't even need to know whic
 
 Just as we suspect, we come out pretty far ahead! Our new version is a bit slower than when we just counted every byte (we're now doing a few extra bit-checks), so it's probably a good idea to add a `utf` flag to our program so we can always run as fast as possible for a given input.
 
+# Interjection!
+
+Since posting the article, the wonderful [Harendra Kumar](https://github.com/harendra-kumar) has provided me with a new performance tweak to try, which (spoiler alert) gives us better memory and performance while also allowing us to STREAM input from stdin! Wow! The code is pretty too!
+
+The secret lies in the [`streamly` library](https://github.com/composewell/streamly), a wonderful high-level high-performance streaming library. I'd seen it in passing, but these result will definitely have me reaching for it in the future! Enough talk, let's see some code! Thanks again to Harendra Kumar for this implementation:
+
+```haskell
+module Streaming where
+
+import Types
+import Data.Traversable
+import GHC.Conc (numCapabilities)
+import System.IO (openFile, IOMode(..))
+import qualified Streamly as S
+import qualified Streamly.Data.String as S
+import qualified Streamly.Prelude as S
+import qualified Streamly.Internal.Memory.Array as A
+import qualified Streamly.Internal.FileSystem.Handle as FH
+
+streamingBytestream :: FilePath -> IO Counts
+streamingBytestream fp = do
+    src <- openFile fp ReadMode
+    S.foldl' mappend mempty
+        $ S.aheadly
+        $ S.maxThreads numCapabilities
+        $ S.mapM countBytes
+        $ FH.toStreamArraysOf 1024000 src
+    where
+    countBytes =
+          S.foldl' (\acc c -> acc <> countByte c) mempty
+        . S.decodeChar8
+        . A.toStream
+
+{-# INLINE streamingBytestream #-}
+```
+
+Note; this uses streamly version `7.10` straight from their Github repo, it'll likely be published to hackage soon. It also uses a few internal modules, but hopefully use-cases like this will prove that these combinators have enough valid uses to expose them.
+
+First things first we simply open the file, nothing fancy there.
+
+Next is the streaming code, we'll read it from the bottom to the top to follow the flow of information.
+
+```haskell
+FH.toStreamArraysOf 1024000 src
+```
+
+This chunks the bytes from the file handle into streams of Byte arrays. Using Byte arrays ends up being even faster than using something like a Lazy ByteString! We'll use a separate array for approximately each MB of the file, you can tweak this to your heart's content.
+
+```haskell
+S.mapM countBytes
+```
+
+This uses `mapM` to run the `countBytes` function over the array; `countBytes` itself creates a stream from the array and runs a streaming fold over it with our Monoidal byte counter:
+
+```haskell
+countBytes =
+      S.foldl' (\acc c -> acc <> countByte c) mempty
+    . S.decodeChar8
+    . A.toStream
+```
+
+Next we tell streamly to run the map over arrays in parallel, allowing separate threads to handle each 1MB chunk. We limit the number of threads to our number of capabilities. Once we've read in the data we can process it immediately, and our counting code doesn't have any reasons to block, so adding more threads than capabilities would likely just add more work for the scheduler.
+
+```haskell
+S.maxThreads numCapabilities
+```
+
+Streamly provides many different stream evaluation strategies, We use `aheadly` as our strategy which allows stream elements to be processed in parallel, but still guarantees output will be emitted in the order corresponding to the input. Since we're using a Monoid, so long as everything ends up in the appropriate order we can chunk up the computations any way we like:
+
+```haskell
+S.aheadly
+```
+
+At this point we've counted 1 MB chunks of our input, but we still need to aggregate all the chunks together, we can do this by `mappending` them all in another streaming fold:
+
+```haskell
+S.foldl' mappend mempty
+```
+
+That's the gist! Let's take it for a spin!
+
+Here's the non-utf version on our 543 MB test file:
+
+|          | wc        | multicore-wc           | streaming-wc           |
+| -------- | --------- | ---------------------- | ---------------------- |
+| time     | 2.07s     | 1.23s                  | 1.07s                  |
+| max mem. | 1.87 MB   | 7.06 MB                | 17.81 MB               |
+
+We can see it gets even faster, at the expense of a significant amount of memory, which I suspect could be mitigated by tuning our input chunking, let's try it out. Here's a comparison of the 100 KB chunks vs 1 MB chunks:
+
+|          | streaming-wc (100 KB chunks)    | streaming-wc (1 MB chunks)|
+| -------- | ----------------------------- | ------------------------- |
+| time     | 1.20s                         | 1.07s                     |
+| max mem. | 8.02 MB                       | 17.81 MB                  |
+
+That's about what I suspected, we can trade a bit of performance for a decent hunk of memory. I'm already pretty happy with our results, but feel free to test other tuning strategies.
+
+Lastly let's try the UTF8 version on our 543 MB test file, here's everything side by side:
+
+
+|          | wc -mwl   | multicore-utf8-wc      | streaming-utf-wc (1 MB chunks) |
+| -------- | --------- | ---------------------- | ------------------------------ |
+| time     | 5.56s     | 3.07s                  | 2.67s                          |
+| max mem. | 1.86 MB   | 7.52 MB                | 17.92 MB                       |
+
+We're still getting faster! For the final version we may want to cut the memory usage down a bit though!
+
+Overall I think the streaming version is my favourite, it's very high-level, very readable, and reads from an arbitrary file handle, including `stdin`, which is a very common use-case for `wc`. Streamly is pretty cool.
+
 ## Conclusions
 
-So; how does our high-level garbage-collected runtime-based language Haskell stack up? Pretty dang well I'd say! We ended up really quite close with our single-core lazy-bytestring `wc`. Switching to a multi-core approach ultimately allowed us to pull ahead! Whether our `wc` clone is faster in practice without a warmed up disk-cache is something that should be considered, but in terms of raw performance we managed to build something faster!
+So; how does our high-level garbage-collected runtime-based language Haskell stack up? Pretty dang well I'd say! We ended up really quite close with our single-core lazy-bytestring `wc`. Switching to a multi-core approach ultimately allowed us to pull ahead! Whether our `wc` clone is faster in practice without a warmed up disk-cache is something that should be considered, but in terms of raw performance we managed to build something faster! The streaming version shouldn't have the same dependencies on disk caching to be optimal.
 
 Haskell as a language isn't perfect, but if I can get ball-park comparable performance to a C program while writing high-level fully type-checked code then I'll call that a win any day.
