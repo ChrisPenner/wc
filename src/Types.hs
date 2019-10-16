@@ -1,4 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE UnboxedSums #-}
+
 module Types where
 
 import Data.Monoid
@@ -9,7 +11,7 @@ import Data.ByteString.Internal (c2w)
 data Counts =
     Counts { charCount :: {-# UNPACK #-} !Int
 
-           , wordCount ::  !Flux
+           , wordCount :: {-# UNPACK #-} !Flux
            , lineCount :: {-# UNPACK #-} !Int
            }
     deriving (Show)
@@ -23,14 +25,14 @@ instance Monoid Counts where
 data Pair a = Pair !a !a
     deriving (Show, Eq)
 
-data CharType = IsSpace | NotSpace
+data CharType = IsSpace  | NotSpace
     deriving Show
 
 data Flux =
-    Flux !CharType
+    Flux {-# UNPACK #-} !CharType
          {-# UNPACK #-} !Int
-         !CharType
-    | Unknown
+         {-# UNPACK #-} !CharType
+    |  Unknown
     deriving Show
 
 instance Semigroup Flux where
