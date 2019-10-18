@@ -6,7 +6,7 @@ module Types where
 import Data.Monoid
 import Data.Char
 import Data.Bits
-import Data.ByteString.Internal (c2w)
+import Data.ByteString.Internal (c2w, isSpaceChar8)
 
 data Counts =
     Counts { charCount :: {-# UNPACK #-} !Int
@@ -45,7 +45,7 @@ instance Monoid Flux where
   mempty = Unknown
 
 flux :: Char -> Flux
-flux c | isSpace c = Flux IsSpace 0 IsSpace
+flux c | isSpaceChar8 c = Flux IsSpace 0 IsSpace
        | otherwise = Flux NotSpace 1 NotSpace
 {-# INLINE flux #-}
 
@@ -74,12 +74,13 @@ countByteUTF8 :: Char -> Counts
 countByteUTF8 c =
      Counts {
                 -- Only count bytes at the START of a codepoint, not continuations
-                charCount = if (bitAt 7 && not (bitAt 6)) then 0 else 1
+                charCount = if isContinutation then 0 else 1
                 -- charCount = 1
-               , wordCount = flux c
+               , wordCount = if isContinutation then mempty else flux c
                , lineCount = if (c == '\n') then 1 else 0
                }
     where
+      isContinutation = bitAt 7 && not (bitAt 6)
       bitAt = testBit (c2w c)
 {-# INLINE countByteUTF8 #-}
 

@@ -32,7 +32,7 @@ main = do
     results <- getArgs >>= \case
         ("handle-utf": filenames) -> handleSplitUTF filenames
         ("lazy": filenames) -> lazyBytestream filenames
-        ("lazy-utf8": filenames) -> lazyUTF8 filenames
+        ("lazy-utf": filenames) -> lazyUTF8 filenames
         ("simple-bs-fold": filenames) -> simpleBSFold filenames
         ("monoid-bs-fold": filenames) -> monoidBSFold filenames
         ("inlined-monoid-bs-fold": filenames) -> inlinedMonoidBSFold filenames

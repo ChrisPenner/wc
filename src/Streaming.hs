@@ -22,7 +22,7 @@ streamingBytestream paths = for paths $ \fp -> do
     return (fp, count)
     where
     countBytes =
-          S.foldl' (\acc c -> acc <> countByteUTF8 c) mempty
+          S.foldl' (\acc c -> acc <> countByte c) mempty
         . S.decodeChar8
         . A.toStream
 

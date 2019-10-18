@@ -17,5 +17,5 @@ lazyUTF8 paths = for paths $ \fp -> do
 {-# INLINE lazyUTF8 #-}
 
 lazyBytestreamCountFile :: BL.ByteString -> Counts
-lazyBytestreamCountFile = BL.foldl' (flip (mappend . countByteUTF8)) mempty
+lazyBytestreamCountFile = BL.foldl' (\acc c -> acc <> countByteUTF8 c) mempty
 {-# INLINE lazyBytestreamCountFile #-}
