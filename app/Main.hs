@@ -21,6 +21,7 @@ import LazyUTFAgnostic
 import Strict
 import Parallel
 import Streaming
+import StreamingUTF
 import FileSplit
 import FileSplitUTF
 import HandleSplitUTF
@@ -43,6 +44,7 @@ main = do
         ("strict": filenames) -> strictBytestream filenames
         ("parallel": filenames) -> parallelBytestream filenames
         ("streaming": filenames) -> streamingBytestream filenames
+        ("streaming-utf": filenames) -> streamingUTF filenames
         ("split": filenames) -> filesplit filenames
         ("split-utf": filenames) -> filesplitUTF filenames
         _ -> hPutStrLn stderr "usage: <simple|lazy> [files...]" >> exitFailure

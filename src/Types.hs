@@ -71,7 +71,8 @@ toTuple :: Counts -> (Int, Int, Int)
 toTuple Counts{charCount, wordCount, lineCount} = (lineCount, getFlux wordCount, charCount)
 
 countByteUTF8 :: Char -> Counts
-countByteUTF8 c =
+countByteUTF8 c | isContinutation = mempty
+                | otherwise =
      Counts {
                 -- Only count bytes at the START of a codepoint, not continuations
                 charCount = if isContinutation then 0 else 1
@@ -82,6 +83,7 @@ countByteUTF8 c =
     where
       isContinutation = bitAt 7 && not (bitAt 6)
       bitAt = testBit (c2w c)
+
 {-# INLINE countByteUTF8 #-}
 
 countByte :: Char -> Counts
